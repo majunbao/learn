@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05-03-绘制随机大小颜色位置的点</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import { initShader } from "../common.js";
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.querySelector('#canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const gl = canvas.getContext('webgl');
+
+    const vsSrouce = `
+      attribute vec4 a_Position;
+      attribute float a_PointSize;
+
+      void main() {
+        gl_Position = a_Position;
+        gl_PointSize = a_PointSize;
+      }
+    `;
+    const fsSource = `
+      precision mediump float;
+      uniform vec4 u_FrageColor;
+
+      void main() {
+        gl_FragColor = u_FrageColor;
+      }
+    `;
+
+    initShader(gl, vsSrouce, fsSource);
+
+    // 获取修改变量的指针
+    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+    const u_FrageColor = gl.getUniformLocation(gl.program, 'u_FrageColor');
+
+    const a_points = [
+      { x: -0.3, y: 0 },
+      { x: 0.3, y: 0 }
+    ];
+
+    gl.clearColor(0, 0, 0, 1);
+
+    function render() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      for (let i = 0; i < 50; i++) {
+        gl.vertexAttrib2f(a_Position, Math.random() * 2 - 1, Math.random() * 2 - 1);
+        gl.vertexAttrib1f(a_PointSize, Math.random() * 20 + 5);
+        gl.uniform4f(u_FrageColor, Math.random(), Math.random(), Math.random(), 1);
+        gl.drawArrays(gl.POINTS, 0, 1);
+      }
+    }
+
+    render();
+
+  </script>
+</body>
+
+</html>

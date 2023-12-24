@@ -1,0 +1,87 @@
+<!-- 颜色加透明后只是颜色变淡，并没有透明的效果
+想要有透明的效果需要开启片元的颜色合成功能，具体步骤如下： -->
+<!-- 1.告诉gl开启颜色合成功能 -->
+<!-- 2.告诉gl合成方式 -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>06-02-绘制随机透明的星星</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import { initShader, canvasSize } from "../common.js";
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.querySelector('#canvas');
+    if (false) {
+      canvas.width = canvasSize.width * window.devicePixelRatio;
+      canvas.height = canvasSize.height * window.devicePixelRatio;
+      canvas.style.width = canvasSize.width + 'px';
+      canvas.style.height = canvasSize.height + 'px';
+    } else {
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+    }
+    const gl = canvas.getContext('webgl');
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_CONSTANT_ALPHA);
+
+    const vsSrouce = `
+      attribute vec4 a_Position;
+      attribute float a_PointSize;
+
+      void main() {
+        gl_Position = a_Position;
+        gl_PointSize = a_PointSize;
+      }
+    `;
+    const fsSource = `
+      precision mediump float;
+      uniform vec4 u_FrageColor;
+
+      void main() {
+        float dist = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if(dist<0.5) {
+          gl_FragColor = u_FrageColor;
+        }else {
+          discard;
+        }
+      }
+    `;
+
+    initShader(gl, vsSrouce, fsSource);
+
+    // 获取修改变量的指针
+    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+    const u_FrageColor = gl.getUniformLocation(gl.program, 'u_FrageColor');
+
+    gl.clearColor(0, 0, 0, 1);
+
+    function render() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      for (let i = 0; i < 50; i++) {
+        gl.vertexAttrib2f(a_Position, Math.random() * 2 - 1, Math.random() * 2 - 1);
+        gl.vertexAttrib1f(a_PointSize, Math.random() * 3 + 3);
+        gl.uniform4f(u_FrageColor, Math.random(), Math.random(), Math.random(), Math.random());
+        gl.drawArrays(gl.POINTS, 0, 1);
+      }
+    }
+
+    render();
+
+  </script>
+</body>
+
+</html>

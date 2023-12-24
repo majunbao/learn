@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01-JS改变点位置</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import { initShader } from "../common.js";
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.querySelector('#canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const gl = canvas.getContext('webgl');
+
+    const vsSrouce = `
+      attribute vec4 a_Position;
+      attribute float a_PointSize;
+      void main() {
+        gl_Position = a_Position;
+        gl_PointSize = a_PointSize;
+      }
+    `;
+    const fsSource = `
+      void main() {
+        gl_FragColor = vec4(1.,0.,0.,1.);
+      }
+    `;
+
+    initShader(gl, vsSrouce, fsSource);
+
+
+    // 获取修改变量的指针
+    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+
+    // 修改变量
+    gl.vertexAttrib1f(a_Position, 0.4, 0, 0);
+    gl.vertexAttrib1f(a_PointSize, 10);
+
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, 1);
+
+
+
+  </script>
+</body>
+
+</html>

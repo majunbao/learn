@@ -1,0 +1,85 @@
+<!-- 实现方法 -->
+<!-- 在片元着色器判断片元到中心点的距离，如果小于0.5的保留 -->
+<!-- 片元的坐标是归一化的，也就是0-1，所以中心点是0.5，圆的半径最大也就是0.5 -->
+<!-- 每个片元都会运行一次片元着色器内的main方法 -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>06-绘制圆点</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import { initShader, canvasSize } from "../common.js";
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.querySelector('#canvas');
+    if (false) {
+      canvas.width = canvasSize.width * window.devicePixelRatio;
+      canvas.height = canvasSize.height * window.devicePixelRatio;
+      canvas.style.width = canvasSize.width + 'px';
+      canvas.style.height = canvasSize.height + 'px';
+    } else {
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+    }
+    const gl = canvas.getContext('webgl');
+
+    const vsSrouce = `
+      attribute vec4 a_Position;
+      attribute float a_PointSize;
+
+      void main() {
+        gl_Position = a_Position;
+        gl_PointSize = a_PointSize;
+      }
+    `;
+    const fsSource = `
+      precision mediump float;
+      uniform vec4 u_FrageColor;
+
+      void main() {
+        float dist = distance(gl_PointCoord, vec2(0.5, 0.5));
+        if(dist<0.5) {
+          gl_FragColor = u_FrageColor;
+        }else {
+          discard;
+        }
+      }
+    `;
+
+    initShader(gl, vsSrouce, fsSource);
+
+    // 获取修改变量的指针
+    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+    const u_FrageColor = gl.getUniformLocation(gl.program, 'u_FrageColor');
+
+    gl.clearColor(0, 0, 0, 1);
+
+    function render() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      for (let i = 0; i < 50; i++) {
+        gl.vertexAttrib2f(a_Position, Math.random() * 2 - 1, Math.random() * 2 - 1);
+        gl.vertexAttrib1f(a_PointSize, Math.random() * 20 + 5);
+        gl.uniform4f(u_FrageColor, Math.random(), Math.random(), Math.random(), 1);
+        gl.drawArrays(gl.POINTS, 0, 1);
+      }
+    }
+
+    render();
+
+  </script>
+</body>
+
+</html>

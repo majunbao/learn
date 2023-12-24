@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01-JS改变点位置</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    // JS修改顶点颜色和修改顶点坐标差不多
+    // 1、在片元着色器中申明uniform变量(申明之前需要先指定精度 precision )
+    // 2、js找到变量指针（getUniformLocation）
+    // 3、js中修改内容(uniform4f)
+    import { initShader } from "../common.js";
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.querySelector('#canvas');
+    canvas.width = 400;
+    canvas.height = 400;
+    const gl = canvas.getContext('webgl');
+
+    const vsSrouce = `
+      void main() {
+        gl_Position = vec4(0,0,0,0);
+        gl_PointSize = 50.0;
+      }
+    `;
+    // 1
+    const fsSource = `
+      precision mediump float;
+      uniform vec4 u_FrageColor;
+      
+      void main() {
+        gl_FragColor = u_FrageColor;
+      }
+    `;
+
+    initShader(gl, vsSrouce, fsSource);
+
+    // 2
+    const u_FrageColor = gl.getUniformLocation(gl.program, 'u_FrageColor');
+
+    // 3
+    gl.uniform4f(u_FrageColor, 1.0, 1.0, 0, 1);
+
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, 1);
+
+
+
+  </script>
+</body>
+
+</html>

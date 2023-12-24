@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01-刷底色</title>
+  <style>
+    body {
+      margin: 0
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const gl = canvas.getContext('webgl');
+    let colorR = 0;
+    let isAdd = 1;
+    gl.clearColor(colorR, 1, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    function animate() {
+      colorR += 0.05 * isAdd;
+      gl.clearColor(colorR, 1, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      if (colorR >= 1) isAdd = -1;
+      else if (colorR <= 0) isAdd = 1
+      window.requestAnimationFrame(animate);
+    }
+
+    window.requestAnimationFrame(animate)
+  </script>
+</body>
+
+</html>
