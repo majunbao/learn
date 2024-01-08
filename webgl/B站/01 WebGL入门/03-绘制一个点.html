@@ -57,6 +57,7 @@
       gl.attachShader(program, fragmentShader);
       // 4.连接webgl上下文对象和程序对象（绘图板连接触控笔（js））
       gl.linkProgram(program);
+
       // 5.启动程序对象（按下绘图板开启按钮）
       gl.useProgram(program);
       return true;

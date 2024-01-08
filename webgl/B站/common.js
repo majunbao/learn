@@ -5,7 +5,6 @@ export function initShader(gl, vsSource, fsSource) {
   // 4.告诉webgl链接这个程序
   // 5.告诉webgl使用这个程序
 
-
   const program = gl.createProgram();
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
   const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
