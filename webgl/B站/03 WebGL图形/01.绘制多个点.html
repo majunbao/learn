@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>绘制多个点</title>
+  <style>
+    body {
+      background-color: #333;
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import { initShader, canvasSize } from "../common.js";
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.querySelector('#canvas');
+    if (false) {
+      canvas.width = canvasSize.width * window.devicePixelRatio;
+      canvas.height = canvasSize.height * window.devicePixelRatio;
+      canvas.style.width = canvasSize.width + 'px';
+      canvas.style.height = canvasSize.height + 'px';
+    } else {
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+    }
+    const gl = canvas.getContext('webgl');
+
+    const vert = `
+      attribute vec4 a_Position;
+    `;
+    const frag = ``;
+  </script>
+
+</body>
+
+</html>
