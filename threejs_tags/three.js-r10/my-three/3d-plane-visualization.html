@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维直线到三维平面 (k1=2)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        #container {
+            width: 800px;
+            height: 600px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 800px;
+        }
+        .control-item {
+            margin: 10px 0;
+        }
+        h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin: 5px 0;
+        }
+        .highlight {
+            color: #e63946;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h3>f(x₁,x₂) = 2x₁ 三维平面可视化 (可鼠标拖拽旋转、滚轮缩放)</h3>
+    <div id="container"></div>
+    
+    <div class="controls">
+        <div class="control-item">
+            <p>🖱️ 操作说明：</p>
+            <p>1. 鼠标左键拖拽：旋转 3D 视角</p>
+            <p>2. 鼠标滚轮：缩放视图</p>
+            <p>3. 鼠标右键拖拽：平移视图</p>
+        </div>
+        <div class="control-item">
+            <p>📌 核心特征：</p>
+            <p>- 红色线：x₁ 轴 | 绿色线：x₂ 轴 | 蓝色线：f(x₁,x₂) 轴</p>
+            <p>- 黄色平面：f(x₁,x₂) = 2x₁ (沿 x₂ 轴无限延伸的线性平面)</p>
+            <p>- 白色直线：x₂=0 时的二维直线 f(x₁)=2x₁ (平面与 x₂=0 平面的交线)</p>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // 1. 初始化场景、相机、渲染器
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8f9fa);
+        
+        // 透视相机
+        const camera = new THREE.PerspectiveCamera(75, 800/600, 0.1, 1000);
+        camera.position.set(8, 8, 8);
+        camera.lookAt(0, 0, 0);
+        
+        // 渲染器
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(800, 600);
+        document.getElementById('container').appendChild(renderer.domElement);
+        
+        // 2. 添加轨道控制器（支持鼠标交互）
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // 3. 创建坐标轴（x1:红, x2:绿, f:蓝）
+        const axesHelper = new THREE.AxesHelper(10);
+        scene.add(axesHelper);
+
+        // 4. 创建二维直线：x2=0 时 f(x1)=2x1 (白色高亮)
+        const linePoints = [];
+        for (let x1 = -5; x1 <= 5; x1 += 0.1) {
+            const f = 2 * x1;
+            linePoints.push(new THREE.Vector3(x1, 0, f));
+        }
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(linePoints);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 3 });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(line);
+
+        // 5. 创建三维平面：f(x1,x2)=2x1 (半透明黄色)
+        const planeGeometry = new THREE.PlaneGeometry(10, 10, 20, 20);
+        const positions = planeGeometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) {
+            const x1 = positions.getX(i) * 5;
+            const x2 = positions.getY(i) * 5;
+            const f = 2 * x1;
+            positions.setZ(i, f);
+        }
+        positions.needsUpdate = true;
+        planeGeometry.computeVertexNormals();
+
+        const planeMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffd166,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide,
+            wireframe: false
+        });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        scene.add(plane);
+
+        // 6. 添加网格辅助线
+        const gridHelperX1 = new THREE.GridHelper(10, 10, 0xcccccc, 0xeeeeee);
+        gridHelperX1.rotation.x = Math.PI / 2;
+        scene.add(gridHelperX1);
+
+        const gridHelperX2 = new THREE.GridHelper(10, 10, 0xcccccc, 0xeeeeee);
+        gridHelperX2.rotation.z = Math.PI / 2;
+        scene.add(gridHelperX2);
+
+        // 7. 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 8. 窗口大小自适应
+        window.addEventListener('resize', () => {
+            camera.aspect = 800 / 600;
+            camera.updateProjectionMatrix();
+            renderer.setSize(800, 600);
+        });
+    </script>
+</body>
+</html>
