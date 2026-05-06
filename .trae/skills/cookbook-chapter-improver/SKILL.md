@@ -1,14 +1,15 @@
 ---
 name: "cookbook-chapter-improver"
-description: "Improves OpenAI Agents SDK cookbook chapters: adds source code walkthroughs, flow diagrams, progressive learning structure, and learner-perspective review. Invoke when user wants to rewrite or improve a cookbook chapter."
+description: "Improves cookbook chapters for SDK/code projects: plans multi-chapter structure, adds source code walkthroughs, flow diagrams, progressive learning structure, and learner-perspective review. Invoke when user wants to write or improve a cookbook."
 ---
 
 # Cookbook Chapter Improver
 
-This skill transforms superficial cookbook chapters into deep, source-code-driven learning materials for the OpenAI Agents SDK project at `/Users/mayun/Documents/learn/openai-agents-python_tags/openai-agents-python-0.14.6/`.
+This skill transforms superficial cookbook chapters into deep, source-code-driven learning materials. It works with any SDK or code project — adapt the source file discovery to match the target project's structure.
 
 ## When to Invoke
 
+- User wants to write a cookbook from scratch for a code project
 - User wants to rewrite or improve a cookbook chapter
 - User says a chapter is "too simple" or "lacks depth"
 - User wants to add source code analysis to a chapter
@@ -22,38 +23,62 @@ Follow these phases **in order**. Do NOT skip phases.
 
 Before writing a single line, you MUST read all of the following:
 
-1. **The target chapter** — read the full current content
-2. **Source code files** — use `SearchCodebase` and `Glob` to dynamically discover and read ALL relevant `.py` files under `src/agents/`. Do NOT rely on a fixed list — the SDK evolves and each chapter needs a different set of source files. Start from the chapter's topic keywords and trace imports/call chains to find everything that's relevant. When in doubt, read more rather than less.
+1. **The target chapter** — read the full current content (if improving an existing chapter)
+2. **Source code files** — use `SearchCodebase` and `Glob` to dynamically discover and read ALL relevant source files. Do NOT rely on a fixed list — projects evolve and each chapter needs a different set of source files. Start from the chapter's topic keywords and trace imports/call chains to find everything that's relevant. When in doubt, read more rather than less.
 3. **Other cookbook chapters** — read all existing chapters to avoid content overlap (check `cookbook/chapter-*.md`)
-4. **Official docs** — read corresponding docs under `docs/` for reference
+4. **Official docs** — read corresponding docs for reference (if available)
 
 **How to discover relevant source code:**
 
 1. Start from the chapter's main topic (e.g., "Agent" → `agent.py`, "Tools" → `tool.py`)
 2. Trace the import chain — when a file imports from another, read that file too
 3. Trace the call chain — when a function calls another, read the callee
-4. Search for related types — if the chapter mentions `RunResult`, search for all files that reference `RunResult`
-5. Check `src/agents/run_internal/` for engine code that powers the public API
+4. Search for related types — if the chapter mentions a class name, search for all files that reference it
+5. Check internal/engine code that powers the public API
 
-**Commonly needed source files** (as a starting point, NOT an exhaustive list):
+**Source file discovery is project-specific** — adapt the search strategy to the target project's directory structure. Start from `src/`, `lib/`, or the main package directory, and trace outward.
 
-| Area | Key Files |
-|---|---|
-| Core | `agent.py`, `run.py`, `result.py`, `run_context.py`, `items.py` |
-| Tools | `tool.py`, `function_schema.py`, `tool_context.py`, `tool_guardrails.py` |
-| Config | `run_config.py`, `model_settings.py`, `lifecycle.py` |
-| Safety | `guardrail.py`, `tool_guardrails.py`, `exceptions.py`, `run_error_handlers.py` |
-| Engine | `run_internal/` (run_loop.py, tool_execution.py, turn_resolution.py, guardrails.py, etc.) |
-| Output | `agent_output.py`, `usage.py` |
-| Memory | `memory/` (SQLiteSession, InMemorySession, etc.) |
-| Streaming | `stream_events.py` |
-| Handoffs | `handoffs/` |
-| Sandbox | `sandbox/` |
-| Misc | `retry.py`, `tracing/` |
+### Phase 1.5: Chapter Planning — Split into Multiple Chapters
 
-### Phase 2: First Rewrite — Add Depth
+**CRITICAL: Do NOT write a single monolithic chapter.** A cookbook must be split into multiple focused chapters, each covering one cohesive topic. A single chapter longer than ~300 lines is a sign that the content should be split.
 
-Rewrite the chapter with these principles:
+**Planning steps:**
+
+1. **Identify major topic areas** from the source code. Each distinct subsystem, component, or concept should become its own chapter. Examples:
+   - Quick start + architecture overview
+   - Core class deep dive
+   - Configuration / prompt system
+   - Tool / plugin system
+   - Execution engine / sandboxing
+   - Extensions / advanced patterns
+
+2. **Define chapter boundaries** using these principles:
+   - Each chapter should answer ONE core question (e.g., "How does the agent loop work?", "How do tools work?")
+   - A chapter should be readable in one sitting (~150-300 lines)
+   - Chapters should have clear prerequisites (e.g., Ch2 requires Ch1)
+   - No chapter should depend on a later chapter (topological ordering)
+
+3. **Create a chapter outline table** showing:
+   | Chapter | Title | Core Question | Key Source Files | Prerequisites |
+   - Present this to the user before writing any chapters
+   - Each chapter should map to specific source files
+
+4. **Cross-reference design:**
+   - When a concept is explained in detail in one chapter, other chapters should reference it ("as covered in Ch3 §3.4") instead of repeating the explanation
+   - Each chapter's "How to Read" section should list cross-references to other chapters
+   - The first chapter should end with a "What's Next" section linking to subsequent chapters
+
+5. **Chapter naming convention:** Use `chapter-N-short-name.md` where N is sequential and `short-name` is a kebab-case topic identifier.
+
+**Anti-patterns to avoid:**
+- ❌ One 700+ line chapter that covers everything
+- ❌ Chapters with vague names like "Advanced Topics" that dump unrelated content together
+- ❌ Overlapping content between chapters (if two chapters explain the same thing, one should reference the other)
+- ❌ Chapters that are too thin (<100 lines) — merge them with a related chapter
+
+### Phase 2: Write All Chapters — Add Depth
+
+Write ALL planned chapters from Phase 1.5. Each chapter must follow these principles:
 
 1. **Source Code Walkthroughs** — Add at least 2-3 per chapter. Each walkthrough must:
    - Show **simplified real source code** (not pseudocode, not just type signatures)
@@ -84,9 +109,9 @@ Rewrite the chapter with these principles:
    - Pass 2: Dive into source code — list all 🔥 walkthroughs by section number. Adjust time estimate based on content depth
    - Pass 3: Fill gaps — provide an **itemized list** with one bullet per topic area, each pointing to the specific section(s) and subsections. Do NOT use vague one-liners like "Need context? → 1.8". Instead, be specific: "Context system & dynamic instructions? → 1.8 + 1.9" or "RunResult details (guardrails, context wrapper, methods)? → 1.5 (Guardrail Results, Context Wrapper, Key Methods subsections)"
 
-### Phase 3: Learner-Perspective Review
+### Phase 3: Learner-Perspective Review (Per Chapter)
 
-After the first rewrite, role-play as a **first-time learner** reading the chapter from line 1 to the end. Evaluate:
+After writing all chapters, review **each chapter** as a **first-time learner** reading from line 1 to the end. Evaluate:
 
 1. **Learning flow** — Is information introduced in the right order? Are prerequisites met before a concept is used?
 2. **Source code clarity** — Are the walkthroughs understandable? Are there unexplained types/functions?
@@ -110,9 +135,9 @@ Fix every issue found in Phase 3. Common improvements include:
 - Fixing variable name bugs in code examples
 - Adding boundary explanations (who calls whom)
 
-### Phase 5: Depth Audit — The Systematic Check
+### Phase 5: Depth Audit — The Systematic Check (Per Chapter)
 
-After Phase 4, perform a **systematic depth audit** on every section of the chapter. This is the critical step that catches superficial content. For each section, ask:
+After Phase 4, perform a **systematic depth audit** on every section of **each chapter**. This is the critical step that catches superficial content. For each section, ask:
 
 **"Is this section just a list/table/code snippet, or does it have real source code analysis and practical examples?"**
 
@@ -200,11 +225,13 @@ Go through ALL 17 checklist items one by one. For each item, write:
 
 This format prevents superficial audits where you just stamp ✅ on every section without actually checking the 17 criteria. If you find yourself writing ✅ for more than 3 checklist items in a row without evidence, you are probably not checking carefully enough.
 
-### Phase 6: Overlap Check
+### Phase 6: Cross-Chapter Overlap Check
 
-Verify the chapter does NOT overlap with other cookbook chapters:
-- Read all other chapter files
-- If overlap exists, either: trim the overlap from this chapter (if it belongs elsewhere), or add a cross-reference note like "Chapter X covers Y in depth"
+Verify that chapters do NOT overlap with each other:
+- Read all chapter files
+- If overlap exists, either: trim the overlap from the chapter where it's secondary (keep it where it belongs), or add a cross-reference note like "Chapter X covers Y in depth"
+- Verify all cross-chapter references are correct (chapter numbers, section numbers)
+- Verify each chapter's "Prerequisites" line correctly references prior chapters
 
 ## Depth Audit Checklist
 
