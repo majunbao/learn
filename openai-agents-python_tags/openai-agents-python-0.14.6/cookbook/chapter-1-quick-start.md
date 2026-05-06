@@ -60,16 +60,16 @@ Before we read source code, let's build intuition with a simple picture. When yo
          │
          ▼
   ┌─ The Loop ──────────────────────────────────────────────────────┐
-  │                                                                  │
+  │                                                                 │
   │   1. (first turn only) Run input guardrails                     │
-  │   2. Call the LLM ──────▶ get back a response                  │
+  │   2. Call the LLM ──────▶ get back a response                   │
   │   3. What did the LLM return?                                   │
   │      ├─ Final answer? ──────▶ exit loop ✅                      │
   │      ├─ Tool calls? ───────▶ execute tools, then loop again 🔄  │
-  │      └─ Handoff? ──────────▶ switch agent, then loop again 🔄  │
-  │                                                                  │
+  │      └─ Handoff? ──────────▶ switch agent, then loop again 🔄   │
+  │                                                                 │
   │   (repeat until final answer, or max_turns exceeded)            │
-  └──────────────────────────────────────────────────────────────────┘
+  └─────────────────────────────────────────────────────────────────┘
          │
          ▼
   ┌─ Cleanup ───────────────────────────────────┐
