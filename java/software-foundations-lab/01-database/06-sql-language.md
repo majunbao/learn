@@ -26,7 +26,26 @@
 
 ## 2. DDL — Defining Things
 
-### 2.1 Tables
+### 2.1 Database
+
+Before creating tables, you need a database:
+
+```sql
+CREATE DATABASE school CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+DROP DATABASE school;          -- delete the entire database
+
+SHOW DATABASES;                -- list all databases
+
+USE school;                    -- switch to this database (required before creating tables)
+
+SHOW TABLES;                   -- list all tables in current database
+```
+
+> **Important**: Always run `USE database_name;` before creating tables,
+> otherwise you'll get "No database selected" error.
+
+### 2.2 Tables
 ```sql
 CREATE TABLE student (
     sid     BIGINT      PRIMARY KEY,

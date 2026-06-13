@@ -1,0 +1,5 @@
+{
+  "workbench.editorAssociations": {
+    "*.md": "trae.markdown.preview.editor"
+  }
+}
