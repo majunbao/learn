@@ -26,6 +26,8 @@ public class OrderService {
 
 ## Step 1: Update @MiniAutowired for methods
 
+**File**: `src/main/java/com/miniboot/framework/annotations/MiniAutowired.java`
+
 ```java
 package com.miniboot.framework.annotations;
 
@@ -43,6 +45,8 @@ public @interface MiniAutowired {
 ---
 
 ## Step 2: Update SimpleBeanFactory with setter injection
+
+**File**: `src/main/java/com/miniboot/framework/beans/SimpleBeanFactory.java`
 
 ```java
 package com.miniboot.framework.beans;
@@ -196,6 +200,8 @@ public class SimpleBeanFactory {
 
 ## Step 3: Test classes with setter injection
 
+**File**: `src/main/java/com/miniboot/demo/OrderService.java`
+
 ```java
 package com.miniboot.test;
 
@@ -239,6 +245,8 @@ public class OrderService {
 
 ## Step 4: Test all injection methods together
 
+**File**: `src/main/java/com/miniboot/demo/SetterInjectionTest.java`
+
 ```java
 package com.miniboot.test;
 
@@ -262,12 +270,118 @@ public class SetterInjectionTest {
 
 ---
 
-## How it works (setter injection)
+## How to Run
 
-1. After bean is created, scan all methods
-2. Find methods with `@MiniAutowired`, starting with `set`, one parameter
-3. Get bean for parameter type
-4. Call setter method via reflection, passing the dependency
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.SetterInjectionTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `SetterInjectionTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'SetterInjectionTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all needed files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/beans/*.java com/miniboot/framework/context/*.java com/miniboot/framework/scanner/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.SetterInjectionTest
+```
+
+### Expected Output
+
+```
+Result: User 123 from database | Order 456 from database | Payment of 100.0 processed
+
+All injection methods working!
+- Field injection (paymentService)
+- Setter injection (userDao, orderDao)
+```
+
+---
+
+## How it works (setter injection step by step)
+
+### Step 1: Update @MiniAutowired for methods
+```java
+@Target({ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
+public @interface MiniAutowired {
+}
+```
+- **Add `ElementType.METHOD`**: Allow annotation on setter methods
+
+### Step 2: Scan for setter methods
+```java
+private void injectSetterDependencies(Object bean) {
+    Class<?> clazz = bean.getClass();
+    
+    for (Method method : clazz.getDeclaredMethods()) {
+        // Look for setter methods with @MiniAutowired
+        if (method.isAnnotationPresent(MiniAutowired.class) && 
+            method.getName().startsWith("set") &&
+            method.getParameterCount() == 1) {
+            
+            // Get parameter type and resolve bean
+            Class<?> paramType = method.getParameterTypes()[0];
+            Object dependency = getBean(paramType);
+            
+            // Call setter method
+            try {
+                method.setAccessible(true);
+                method.invoke(bean, dependency);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to inject via setter: " + method.getName(), e);
+            }
+        }
+    }
+}
+```
+- **Conditions**:
+  - `@MiniAutowired` annotation present
+  - Method name starts with `set`
+  - Exactly one parameter
+
+### Step 3: Resolve and inject
+```java
+Class<?> paramType = method.getParameterTypes()[0];
+Object dependency = getBean(paramType);
+method.invoke(bean, dependency);
+```
+- **`getParameterTypes()`**: Get type of the single parameter
+- **`getBean()`**: Resolve dependency
+- **`method.invoke()`**: Call setter method
+
+### Step 4: Unified injection flow
+```java
+private void injectDependencies(Object bean) {
+    injectFieldDependencies(bean);
+    injectSetterDependencies(bean);
+}
+```
+- **Order**: Field injection first, then setter injection
+- **Unified**: All dependency injection in one method
+
+---
+
+## Key Code Explanation
+
+| Code | Purpose | Technical Point |
+|------|---------|-----------------|
+| `getDeclaredMethods()` | Get all methods | Including private |
+| `method.getName().startsWith("set")` | Identify setter | JavaBean naming convention |
+| `getParameterTypes()[0]` | Get parameter type | For dependency resolution |
+| `method.invoke()` | Call method via reflection | Pass resolved dependency |
+| `setAccessible(true)` | Allow calling private setters | Break access control |
 
 ---
 

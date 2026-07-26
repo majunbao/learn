@@ -19,6 +19,8 @@ BeanFactory is responsible for:
 
 ## Step 1: Create SimpleBeanFactory class
 
+**File**: `src/main/java/com/miniboot/framework/beans/SimpleBeanFactory.java`
+
 ```java
 package com.miniboot.framework.beans;
 
@@ -107,8 +109,10 @@ public class SimpleBeanFactory {
 
 ## Step 2: Test the BeanFactory
 
+**File**: `src/main/java/com/miniboot/demo/BeanFactoryTest.java`
+
 ```java
-package com.miniboot.test;
+package com.miniboot.demo;
 
 import com.miniboot.framework.beans.BeanDefinition;
 import com.miniboot.framework.beans.SimpleBeanFactory;
@@ -144,13 +148,126 @@ public class BeanFactoryTest {
 
 ---
 
+## How to Run
+
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.BeanFactoryTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `BeanFactoryTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'BeanFactoryTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all needed files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/beans/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.BeanFactoryTest
+```
+
+### Expected Output
+
+```
+Service 1: com.miniboot.test.OrderService@...
+Service 2: com.miniboot.test.OrderService@...
+Same instance (singleton): true
+Get by type works: true
+Method call: Order 123
+```
+
+---
+
 ## How it works (step by step)
 
-1. **Register**: Store BeanDefinition in a map
-2. **Get by name**: Look up BeanDefinition
-3. **Singleton check**: If singleton, check cache first
-4. **Create bean**: Use reflection to call no-arg constructor
-5. **Cache**: If singleton, store the created bean
+### Step 1: Register BeanDefinition
+```java
+beanFactory.registerBeanDefinition("orderService", bd);
+```
+- **Purpose**: Store metadata in `beanDefinitionMap`
+- **Data structure**: `ConcurrentHashMap<String, BeanDefinition>`
+- **Thread-safe**: `ConcurrentHashMap` ensures thread safety
+
+### Step 2: Get bean by name
+```java
+public Object getBean(String beanName) {
+    BeanDefinition bd = beanDefinitionMap.get(beanName);
+    if (bd == null) {
+        throw new RuntimeException("No bean named '" + beanName + "' found");
+    }
+    // ...
+}
+```
+- **Lookup**: Find BeanDefinition by name
+- **Error handling**: Throw exception if not found
+
+### Step 3: Singleton check
+```java
+if (bd.isSingleton()) {
+    if (!singletonObjects.containsKey(beanName)) {
+        Object bean = createBean(bd);
+        singletonObjects.put(beanName, bean);
+    }
+    return singletonObjects.get(beanName);
+}
+```
+- **Cache check**: If already in cache, return immediately
+- **Create if missing**: Only create once for singletons
+- **Cache**: Store in `singletonObjects` map
+
+### Step 4: Prototype handling
+```java
+return createBean(bd);
+```
+- **No caching**: Always create new instance
+- **Use case**: Stateful objects that change per request
+
+### Step 5: Create bean via reflection
+```java
+private Object createBean(BeanDefinition bd) {
+    return bd.getBeanClass().getDeclaredConstructor().newInstance();
+}
+```
+- **Reflection**: `getDeclaredConstructor()` gets constructor
+- **`newInstance()`**: Creates instance without arguments
+- **Requires no-arg constructor**: Must have one in target class
+
+### Step 6: Get bean by type
+```java
+public <T> T getBean(Class<T> requiredType) {
+    for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
+        if (requiredType.isAssignableFrom(entry.getValue().getBeanClass())) {
+            return (T) getBean(entry.getKey());
+        }
+    }
+}
+```
+- **Iterate**: Search all BeanDefinitions
+- **`isAssignableFrom()`**: Check if bean class matches type
+- **Generics**: `<T>` allows type-safe return
+
+---
+
+## Key Code Explanation
+
+| Code | Purpose | Technical Point |
+|------|---------|-----------------|
+| `ConcurrentHashMap` | Thread-safe storage | Safe for concurrent access |
+| `beanDefinitionMap` | Store metadata | Before instantiation |
+| `singletonObjects` | Cache singleton beans | After instantiation |
+| `getDeclaredConstructor()` | Get constructor | Reflection API |
+| `newInstance()` | Create instance | No-arg constructor required |
+| `isAssignableFrom()` | Type check | Polymorphism support |
 
 ---
 

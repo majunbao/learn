@@ -17,6 +17,8 @@ When our framework starts, it needs to:
 
 ## Step 1: Create ClassScanner class
 
+**File**: `src/main/java/com/miniboot/framework/scanner/ClassScanner.java`
+
 ```java
 package com.miniboot.framework.scanner;
 
@@ -77,19 +79,18 @@ public class ClassScanner {
                 // Recurse into subdirectory
                 findClasses(file, packageName + "." + file.getName(), classes);
             } else if (file.getName().endsWith(".class")) {
-                    // Found a .class file, load it and check annotations
-                    String className = packageName + '.' + 
-                            file.getName().substring(0, file.getName().length() - 6);
-                    try {
-                        Class<?> clazz = Class.forName(className);
-                        
-                        // Check if class has any of our annotations
-                        if (isComponentClass(clazz)) {
-                            classes.add(clazz);
-                        }
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                // Found a .class file, load it and check annotations
+                String className = packageName + '.' + 
+                        file.getName().substring(0, file.getName().length() - 6);
+                try {
+                    Class<?> clazz = Class.forName(className);
+                    
+                    // Check if class has any of our annotations
+                    if (isComponentClass(clazz)) {
+                        classes.add(clazz);
                     }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -113,8 +114,10 @@ public class ClassScanner {
 
 Let's create some test classes to scan:
 
+**File**: `src/main/java/com/miniboot/demo/OrderService.java`
+
 ```java
-package com.miniboot.test;
+package com.miniboot.demo;
 
 import com.miniboot.framework.annotations.MiniService;
 
@@ -126,8 +129,10 @@ public class OrderService {
 }
 ```
 
+**File**: `src/main/java/com/miniboot/demo/UserController.java`
+
 ```java
-package com.miniboot.test;
+package com.miniboot.demo;
 
 import com.miniboot.framework.annotations.MiniController;
 
@@ -143,15 +148,17 @@ public class UserController {
 
 ## Step 3: Test the scanner
 
+**File**: `src/main/java/com/miniboot/demo/ScannerTest.java`
+
 ```java
-package com.miniboot.test;
+package com.miniboot.demo;
 
 import com.miniboot.framework.scanner.ClassScanner;
 import java.util.List;
 
 public class ScannerTest {
     public static void main(String[] args) {
-        List<Class<?>> classes = ClassScanner.scanPackage("com.miniboot.test");
+        List<Class<?>> classes = ClassScanner.scanPackage("com.miniboot.demo");
         
         System.out.println("Found " + classes.size() + " component classes:");
         for (Class<?> clazz : classes) {
@@ -159,23 +166,136 @@ public class ScannerTest {
         }
         
         // Should print:
-        // Found 2 component classes:
-        // - com.miniboot.test.OrderService
-        // - com.miniboot.test.UserController
+        // Found 3 component classes:
+        // - com.miniboot.demo.OrderService
+        // - com.miniboot.demo.UserController
+        // - com.miniboot.demo.UserService
     }
 }
 ```
 
 ---
 
-## How it works (step by step
+## How to Run
 
-1. Convert package name (`com.miniboot.test`) to path (`com/miniboot/test`)
-2. Get all resources from classloader for that path
-3. Recursively walk through directories
-4. For each `.class` file, load the class
-5. Check if class has any of our annotations
-6. Collect annotated classes
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ScannerTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `ScannerTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'ScannerTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/scanner/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.ScannerTest
+```
+
+### Expected Output
+
+```
+Found 3 component classes:
+- com.miniboot.demo.OrderService
+- com.miniboot.demo.UserController
+- com.miniboot.demo.UserService
+```
+
+> **Note**: The exact number may vary depending on how many `@MiniService`/`@MiniController` classes you have in the `demo` package.
+
+---
+
+## How it works (step by step)
+
+### Step 1: Convert package name to path
+```java
+String packagePath = packageName.replace('.', '/');
+```
+- **Purpose**: Convert package name `com.miniboot.test` to file path `com/miniboot/test`
+- **Why**: Java package structure maps directly to directory structure on disk
+
+### Step 2: Get package location on disk
+```java
+Enumeration<URL> resources = Thread.currentThread()
+        .getContextClassLoader()
+        .getResources(packagePath);
+```
+- **Purpose**: Find the actual location of the package on disk via classloader
+- **ClassLoader**: The component responsible for loading `.class` files
+- **Returns**: Multiple URLs possible (if package is split across multiple JARs)
+
+### Step 3: Recursively traverse directories
+```java
+private static void findClasses(File directory, String packageName, List<Class<?>> classes) {
+    // Termination condition: directory doesn't exist
+    if (!directory.exists()) {
+        return;
+    }
+    
+    // Get all files in directory
+    File[] files = directory.listFiles();
+    
+    for (File file : files) {
+        if (file.isDirectory()) {
+            // If directory, recurse into it
+            findClasses(file, packageName + "." + file.getName(), classes);
+        } else if (file.getName().endsWith(".class")) {
+            // If .class file, load and check
+            ...
+        }
+    }
+}
+```
+- **Recursion**: Calling itself to traverse all subdirectories
+- **Termination**: Stop when directory doesn't exist or is empty
+
+### Step 4: Load .class file
+```java
+String className = packageName + '.' + 
+        file.getName().substring(0, file.getName().length() - 6);
+Class<?> clazz = Class.forName(className);
+```
+- **Purpose**: Convert file name to fully qualified class name, then load the class
+- **Example**: `com/miniboot/test/OrderService.class` → `com.miniboot.test.OrderService`
+- **`substring(0, length - 6)`**: Remove `.class` suffix (6 characters)
+
+### Step 5: Check annotations
+```java
+if (isComponentClass(clazz)) {
+    classes.add(clazz);
+}
+```
+- **Purpose**: Check if class has `@MiniService`, `@MiniController`, etc.
+- **`isComponentClass()`**: Uses reflection to check class annotations
+
+### Step 6: Collect results
+All matching classes are collected into `List<Class<?>>` and returned
+
+---
+
+## Key Code Explanation
+
+| Code | Purpose | Technical Point |
+|------|---------|-----------------|
+| `packageName.replace('.', '/')` | Convert package to path | Java packages = directory structure |
+| `getContextClassLoader()` | Get classloader | Responsible for loading bytecode |
+| `getResources()` | Get resource location | Supports resources inside JARs |
+| `findClasses()` | Recursive traversal | Depth-first directory search |
+| `file.getName().endsWith(".class")` | Filter class files | Only process compiled classes |
+| `Class.forName(className)` | Load class | Core reflection method |
+| `isAnnotationPresent()` | Check annotation | Reflection inspects class metadata |
 
 ---
 

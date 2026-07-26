@@ -7,6 +7,54 @@ Build a **mini Spring Boot framework from scratch**, then use this framework to 
 
 ---
 
+## Why These Steps?
+
+Building an IoC container is like building a house - you need to do it step by step:
+
+### The Big Picture: How IoC Works
+
+| Step | What it solves | Analogy |
+|------|---------------|---------|
+| **1. Annotations** | How does the framework know which classes to manage? | Preparing building materials (bricks) |
+| **2. Classpath Scanner** | How to find all annotated classes? | Finding all bricks in the yard |
+| **3. BeanDefinition** | How to describe each class before creating it? | Drawing blueprints for each room |
+| **4. BeanFactory** | How to create and store bean instances? | Building a warehouse to store materials |
+| **5. ApplicationContext** | How to combine scanning + bean factory? | Building the complete house |
+| **6-8. Dependency Injection** | How do beans depend on each other? | Installing pipes and wires to connect rooms |
+| **9. Bean Lifecycle** | How to run initialization after creation? | Decorating and furnishing after construction |
+| **10. Bean Scopes** | How many instances of each bean should exist? | Deciding room sizes (studio vs mansion) |
+
+### Complete IoC Container Flow
+
+```
+Application Startup
+    ↓
+1. Scan package for annotated classes (@MiniService, @MiniController)
+    ↓
+2. Create BeanDefinitions (metadata for each bean)
+    ↓
+3. Register with BeanFactory
+    ↓
+4. Create bean instances via reflection
+    ↓
+5. Inject dependencies (field/constructor/setter)
+    ↓
+6. Call @PostConstruct initialization
+    ↓
+7. Beans are READY to use!
+    ↓
+Application uses beans
+```
+
+### Learning Philosophy
+
+- **Progressive**: Each step introduces one new concept
+- **Hands-on**: You implement each component yourself
+- **Modular**: Each piece can be tested independently
+- **Comparative**: Every component maps to real Spring concepts
+
+---
+
 ## Total Structure
 
 ```

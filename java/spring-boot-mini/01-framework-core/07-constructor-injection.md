@@ -27,6 +27,8 @@ Now update BeanFactory to use it.
 
 ## Step 2: Update SimpleBeanFactory with constructor injection
 
+**File**: `src/main/java/com/miniboot/framework/beans/SimpleBeanFactory.java`
+
 ```java
 package com.miniboot.framework.beans;
 
@@ -164,6 +166,8 @@ public class SimpleBeanFactory {
 
 ## Step 3: Test classes with constructor injection
 
+**File**: `src/main/java/com/miniboot/demo/OrderService.java`
+
 ```java
 package com.miniboot.test;
 
@@ -192,6 +196,8 @@ public class OrderService {
 
 ## Step 4: Test constructor injection
 
+**File**: `src/main/java/com/miniboot/demo/ConstructorInjectionTest.java`
+
 ```java
 package com.miniboot.test;
 
@@ -218,14 +224,122 @@ public class ConstructorInjectionTest {
 
 ---
 
+## How to Run
+
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ConstructorInjectionTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `ConstructorInjectionTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'ConstructorInjectionTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all needed files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/beans/*.java com/miniboot/framework/context/*.java com/miniboot/framework/scanner/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.ConstructorInjectionTest
+```
+
+### Expected Output
+
+```
+Result: Order for: User 123 from database
+
+Constructor injection successful!
+Note: userDao field can be final (immutable!)
+```
+
+---
+
 ## How it works (constructor injection step by step)
 
-1. When creating bean, find constructor with `@MiniAutowired`
-2. For each parameter in that constructor:
-   - Get parameter type
-   - Call `getBean(paramType)` to get the dependency bean
-3. Pass all resolved beans to the constructor
-4. Done! Bean is created with all dependencies injected
+### Step 1: Find autowired constructor
+```java
+private Constructor<?> findAutowiredConstructor(Class<?> clazz) {
+    for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+        if (constructor.isAnnotationPresent(MiniAutowired.class)) {
+            return constructor;
+        }
+    }
+    return null;
+}
+```
+- **`getDeclaredConstructors()`**: Get all constructors of the class
+- **`isAnnotationPresent()`**: Check for `@MiniAutowired`
+- **Return**: First matching constructor found
+
+### Step 2: Resolve constructor arguments
+```java
+private Object[] resolveConstructorArguments(Constructor<?> constructor) {
+    Parameter[] parameters = constructor.getParameters();
+    Object[] args = new Object[parameters.length];
+    
+    for (int i = 0; i < parameters.length; i++) {
+        Class<?> paramType = parameters[i].getType();
+        args[i] = getBean(paramType);  // Get bean for parameter type
+    }
+    
+    return args;
+}
+```
+- **`getParameters()`**: Get all constructor parameters
+- **Loop**: For each parameter, resolve dependency
+- **`getBean(paramType)`**: Get bean by type
+
+### Step 3: Create bean with constructor
+```java
+private Object createBean(BeanDefinition bd) {
+    Class<?> clazz = bd.getBeanClass();
+    
+    // Find constructor with @MiniAutowired
+    Constructor<?> autowiredConstructor = findAutowiredConstructor(clazz);
+    
+    if (autowiredConstructor != null) {
+        // Use constructor injection
+        Object[] args = resolveConstructorArguments(autowiredConstructor);
+        return autowiredConstructor.newInstance(args);
+    }
+    
+    // Fallback to no-arg constructor
+    return clazz.getDeclaredConstructor().newInstance();
+}
+```
+- **Priority**: Constructor injection > no-arg constructor
+- **`newInstance(args)`**: Create instance with resolved dependencies
+- **Fallback**: Use no-arg constructor if no `@MiniAutowired` constructor
+
+### Step 4: Field injection after constructor
+```java
+Object bean = createBean(bd);
+singletonObjects.put(beanName, bean);
+injectFieldDependencies(bean);  // Field injection after creation
+```
+- **Order**: Constructor injection first, then field injection
+- **Why**: Constructor sets mandatory dependencies, fields set optional
+
+---
+
+## Key Code Explanation
+
+| Code | Purpose | Technical Point |
+|------|---------|-----------------|
+| `getDeclaredConstructors()` | Get all constructors | Including private |
+| `isAnnotationPresent()` | Check constructor annotation | Look for `@MiniAutowired` |
+| `getParameters()` | Get constructor parameters | For dependency resolution |
+| `newInstance(args)` | Create instance with args | Constructor call |
+| `resolveConstructorArguments()` | Get beans for all params | Recursive dependency resolution |
 
 ---
 

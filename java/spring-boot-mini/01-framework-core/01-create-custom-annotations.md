@@ -13,7 +13,7 @@ Later, our framework will scan for these labels and treat those classes speciall
 
 ## Step 1: Create the base annotation
 
-Create `MiniComponent.java`:
+**File**: `src/main/java/com/miniboot/framework/annotations/MiniComponent.java`
 
 ```java
 package com.miniboot.framework.annotations;
@@ -31,9 +31,44 @@ public @interface MiniComponent {
 ```
 
 ### What this means:
-- `@Target(ElementType.TYPE)`: Can only be used on classes
-- `@Retention(RetentionPolicy.RUNTIME)`: Visible at runtime (so our framework can find it)
-- `value()`: Optional bean name
+
+#### @Target(ElementType.TYPE)
+```java
+@Target(ElementType.TYPE)
+```
+- **Purpose**: Restricts where this annotation can be used
+- **ElementType.TYPE**: Only on classes, interfaces, or enums
+- **Other options**: `FIELD`, `METHOD`, `CONSTRUCTOR`, `PARAMETER`, etc.
+
+#### @Retention(RetentionPolicy.RUNTIME)
+```java
+@Retention(RetentionPolicy.RUNTIME)
+```
+- **Purpose**: Controls how long the annotation is kept
+- **RetentionPolicy.RUNTIME**: Annotation is visible at runtime (via reflection)
+- **Other options**: 
+  - `SOURCE`: Only in source code, discarded by compiler
+  - `CLASS`: In .class file, but not accessible at runtime
+
+#### value() default ""
+```java
+String value() default "";
+```
+- **Purpose**: Optional attribute for custom bean name
+- **`value()`**: Special attribute name - can be omitted when used
+- **`default ""`**: If not specified, defaults to empty string
+
+---
+
+## Key Annotation Concepts
+
+| Concept | Explanation |
+|---------|-------------|
+| `@interface` | Declares an annotation type (special kind of interface) |
+| `@Target` | Where the annotation can be applied |
+| `@Retention` | How long the annotation persists |
+| `value()` | Default attribute name |
+| `default` | Default value if not specified |
 
 ---
 
@@ -42,6 +77,9 @@ public @interface MiniComponent {
 These are "specialized" components for different layers.
 
 ### @MiniService (for service layer)
+
+**File**: `src/main/java/com/miniboot/framework/annotations/MiniService.java`
+
 ```java
 package com.miniboot.framework.annotations;
 
@@ -55,6 +93,9 @@ public @interface MiniService {
 ```
 
 ### @MiniMapper (for database layer)
+
+**File**: `src/main/java/com/miniboot/framework/annotations/MiniMapper.java`
+
 ```java
 package com.miniboot.framework.annotations;
 
@@ -68,6 +109,9 @@ public @interface MiniMapper {
 ```
 
 ### @MiniController (for web layer)
+
+**File**: `src/main/java/com/miniboot/framework/annotations/MiniController.java`
+
 ```java
 package com.miniboot.framework.annotations;
 
@@ -86,8 +130,10 @@ public @interface MiniController {
 
 Let's create a test class to see if annotations work:
 
+**File**: `src/main/java/com/miniboot/demo/UserService.java`
+
 ```java
-package com.miniboot.test;
+package com.miniboot.demo;
 
 import com.miniboot.framework.annotations.MiniService;
 
@@ -105,8 +151,10 @@ public class UserService {
 
 Create a simple test to check if the class has our annotation:
 
+**File**: `src/main/java/com/miniboot/demo/AnnotationTest.java`
+
 ```java
-package com.miniboot.test;
+package com.miniboot.demo;
 
 public class AnnotationTest {
     public static void main(String[] args) {
@@ -116,6 +164,42 @@ public class AnnotationTest {
         // Should print: UserService has @MiniService: true
     }
 }
+```
+
+---
+
+## How to Run
+
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.AnnotationTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `AnnotationTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'AnnotationTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all needed files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/beans/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.AnnotationTest
+```
+
+### Expected Output
+
+```
+UserService has @MiniService: true
 ```
 
 ---

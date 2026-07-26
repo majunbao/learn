@@ -22,6 +22,8 @@ We'll implement singleton + prototype.
 
 ## Step 1: Create @MiniScope annotation
 
+**File**: `src/main/java/com/miniboot/framework/annotations/MiniScope.java`
+
 ```java
 package com.miniboot.framework.annotations;
 
@@ -83,6 +85,8 @@ public class MiniApplicationContext {
 
 ## Step 3: Create test beans with different scopes
 
+**File**: `src/main/java/com/miniboot/demo/CounterService.java`
+
 ```java
 package com.miniboot.test;
 
@@ -100,6 +104,8 @@ public class CounterService {
     }
 }
 ```
+
+**File**: `src/main/java/com/miniboot/demo/RequestScopedProcessor.java`
 
 ```java
 package com.miniboot.test;
@@ -127,6 +133,8 @@ public class RequestScopedProcessor {
 ---
 
 ## Step 4: Test bean scopes
+
+**File**: `src/main/java/com/miniboot/demo/ScopeTest.java`
 
 ```java
 package com.miniboot.test;
@@ -193,13 +201,128 @@ Different instances: true
 
 ---
 
-## How it works
+## How to Run
 
-1. During scanning, check for `@MiniScope` annotation
-2. Set scope in BeanDefinition
-3. When getBean() is called:
-   - **Singleton**: Check cache, create once, cache
-   - **Prototype**: Always create new instance, no caching
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ScopeTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `ScopeTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'ScopeTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all needed files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/beans/*.java com/miniboot/framework/context/*.java com/miniboot/framework/scanner/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.ScopeTest
+```
+
+### Expected Output
+
+```
+=== Testing SINGLETON scope ===
+counter1.incrementAndGet(): 1
+counter2.incrementAndGet(): 2
+counter3.incrementAndGet(): 3
+Same instance: true
+Same instance: true
+
+=== Testing PROTOTYPE scope ===
+processor1.getRequestId(): 1
+processor2.getRequestId(): 2
+processor3.getRequestId(): 3
+Different instances: true
+Different instances: true
+
+=== Scope behavior confirmed! ===
+- SINGLETON: All getBean() return SAME instance
+- PROTOTYPE: Each getBean() returns NEW instance
+```
+
+---
+
+## How it works (bean scopes step by step)
+
+### Step 1: Create @MiniScope annotation
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MiniScope {
+    BeanScope value() default BeanScope.SINGLETON;
+}
+```
+- **`value()`**: Returns `BeanScope` enum
+- **Default**: `SINGLETON` if not specified
+
+### Step 2: Read @MiniScope during context creation
+```java
+for (Class<?> clazz : componentClasses) {
+    String beanName = getBeanName(clazz);
+    BeanDefinition bd = new BeanDefinition(clazz, beanName);
+    
+    // NEW: Read @MiniScope annotation
+    if (clazz.isAnnotationPresent(MiniScope.class)) {
+        MiniScope scopeAnnotation = clazz.getAnnotation(MiniScope.class);
+        bd.setScope(scopeAnnotation.value());
+    }
+    
+    beanFactory.registerBeanDefinition(beanName, bd);
+}
+```
+- **Check**: Does class have `@MiniScope`?
+- **Set**: Update scope in BeanDefinition
+- **Default**: If no annotation, scope is `SINGLETON`
+
+### Step 3: Singleton behavior in BeanFactory
+```java
+if (bd.isSingleton()) {
+    if (!singletonObjects.containsKey(beanName)) {
+        Object bean = createBean(bd);
+        singletonObjects.put(beanName, bean);
+        injectDependencies(bean);
+        callPostConstruct(bean);
+    }
+    return singletonObjects.get(beanName);
+}
+```
+- **Cache check**: First time? Create and cache
+- **Subsequent**: Return from cache
+- **One instance**: Same object every time
+
+### Step 4: Prototype behavior in BeanFactory
+```java
+// If prototype, create new instance every time
+return createBean(bd);
+```
+- **No caching**: Always create new instance
+- **No reuse**: Each call creates fresh object
+- **Stateful**: Can have different state per instance
+
+### Step 5: Pre-instantiate singletons only
+```java
+private void preInstantiateSingletons() {
+    for (String beanName : beanFactory.getBeanNames()) {
+        BeanDefinition bd = getBeanDefinition(beanName);
+        if (bd.isSingleton() && !bd.isLazyInit()) {
+            beanFactory.getBean(beanName);
+        }
+    }
+}
+```
+- **Only singletons**: Prototypes are created on-demand
+- **Eager loading**: Singletons created at startup
 
 ---
 
@@ -220,6 +343,18 @@ If PROTOTYPE:
     ↓
     Create bean → Return (NO CACHING!)
 ```
+
+---
+
+## Key Code Explanation
+
+| Code | Purpose | Technical Point |
+|------|---------|-----------------|
+| `@MiniScope(BeanScope.SINGLETON)` | Set singleton scope | Default behavior |
+| `@MiniScope(BeanScope.PROTOTYPE)` | Set prototype scope | New instance each time |
+| `isSingleton()` / `isPrototype()` | Check scope | From BeanDefinition |
+| `singletonObjects.containsKey()` | Cache lookup | Check if already created |
+| `singletonObjects.put()` | Cache storage | Store singleton instance |
 
 ---
 

@@ -19,6 +19,8 @@ ApplicationContext is a complete IoC container that:
 
 ## Step 1: Create MiniApplicationContext class
 
+**File**: `src/main/java/com/miniboot/framework/context/MiniApplicationContext.java`
+
 ```java
 package com.miniboot.framework.context;
 
@@ -136,6 +138,8 @@ We need to make ClassScanner accessible from context package. Move it or add imp
 
 ## Step 3: Test ApplicationContext
 
+**File**: `src/main/java/com/miniboot/demo/ApplicationContextTest.java`
+
 ```java
 package com.miniboot.test;
 
@@ -180,13 +184,134 @@ Same instance (singleton): true
 
 ---
 
+## How to Run
+
+### Option 1: Use Maven (recommended)
+
+```bash
+# In project root directory (where pom.xml is)
+mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ApplicationContextTest"
+```
+
+### Option 2: Use IDE (IntelliJ IDEA)
+
+1. Open `ApplicationContextTest.java` in IDEA
+2. Click the green ▶️ play button next to `main` method
+3. Or right-click → Run 'ApplicationContextTest.main()'
+
+### Option 3: Use javac + java (manual)
+
+```bash
+# 1. Go to source directory
+cd src/main/java
+
+# 2. Compile all needed files
+javac com/miniboot/framework/annotations/*.java com/miniboot/framework/beans/*.java com/miniboot/framework/context/*.java com/miniboot/framework/scanner/*.java com/miniboot/demo/*.java
+
+# 3. Run
+java com.miniboot.demo.ApplicationContextTest
+```
+
+### Expected Output
+
+```
+Beans in context:
+- orderService
+- userController
+
+OrderService result: Order 123
+UserController result: User John
+
+Same instance (singleton): true
+```
+
+---
+
 ## How it works (step by step)
 
-1. **Create context** with base package name
-2. **Scan** package for annotated classes
-3. **Create BeanDefinitions** for each class
-4. **Pre-instantiate** singleton beans upfront (eager loading)
-5. **Ready to use** - get beans from context
+### Step 1: Create context and scan
+```java
+public MiniApplicationContext(String basePackage) {
+    this.beanFactory = new SimpleBeanFactory();
+    
+    // Step 1: Scan package
+    List<Class<?>> componentClasses = ClassScanner.scanPackage(basePackage);
+}
+```
+- **Create BeanFactory**: Internal container for beans
+- **Scan**: Find all classes with component annotations
+
+### Step 2: Create BeanDefinitions
+```java
+for (Class<?> clazz : componentClasses) {
+    String beanName = getBeanName(clazz);
+    BeanDefinition bd = new BeanDefinition(clazz, beanName);
+    beanFactory.registerBeanDefinition(beanName, bd);
+}
+```
+- **Get bean name**: From annotation value or class name
+- **Register**: Store metadata in BeanFactory
+
+### Step 3: Get bean name logic
+```java
+private String getBeanName(Class<?> clazz) {
+    String name = null;
+    if (clazz.isAnnotationPresent(MiniComponent.class)) {
+        name = clazz.getAnnotation(MiniComponent.class).value();
+    } else if (clazz.isAnnotationPresent(MiniService.class)) {
+        name = clazz.getAnnotation(MiniService.class).value();
+    }
+    // ... check other annotations
+    
+    if (name == null || name.isEmpty()) {
+        String simpleName = clazz.getSimpleName();
+        name = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
+    }
+    return name;
+}
+```
+- **Priority**: Annotation value > default class name
+- **Fallback**: `OrderService` → `orderService`
+
+### Step 4: Pre-instantiate singletons
+```java
+private void preInstantiateSingletons() {
+    for (String beanName : beanFactory.getBeanNames()) {
+        BeanDefinition bd = getBeanDefinition(beanName);
+        if (bd.isSingleton() && !bd.isLazyInit()) {
+            beanFactory.getBean(beanName);
+        }
+    }
+}
+```
+- **Eager loading**: Create all singletons upfront
+- **Why**: Catch errors early during startup
+- **Lazy init**: Skip if `lazyInit = true`
+
+### Step 5: Get bean definition (hack)
+```java
+public BeanDefinition getBeanDefinition(String beanName) {
+    java.lang.reflect.Field field = SimpleBeanFactory.class.getDeclaredField("beanDefinitionMap");
+    field.setAccessible(true);
+    java.util.Map<String, BeanDefinition> map = (java.util.Map<String, BeanDefinition>) field.get(beanFactory);
+    return map.get(beanName);
+}
+```
+- **Reflection hack**: Access private field
+- **In real Spring**: BeanFactory has proper methods for this
+- **Note**: This is simplified for learning
+
+---
+
+## Key Code Explanation
+
+| Code | Purpose | Technical Point |
+|------|---------|-----------------|
+| `ClassScanner.scanPackage()` | Find annotated classes | Package scanning |
+| `getBeanName()` | Resolve bean name | Annotation value or convention |
+| `preInstantiateSingletons()` | Eager initialization | Create all singletons upfront |
+| `getBeanDefinition()` | Access metadata | Reflection for private access |
+| Delegation methods | Forward to BeanFactory | `getBean()`, `containsBean()` |
 
 ---
 
