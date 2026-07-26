@@ -312,7 +312,7 @@ Result: User 1 from database is ready!
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.LifecycleTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.LifecycleTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)

@@ -276,7 +276,7 @@ public class SetterInjectionTest {
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.SetterInjectionTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.SetterInjectionTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)

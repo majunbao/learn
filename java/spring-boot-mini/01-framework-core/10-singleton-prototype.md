@@ -207,7 +207,7 @@ Different instances: true
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ScopeTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.ScopeTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)

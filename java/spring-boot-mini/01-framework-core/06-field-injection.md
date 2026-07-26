@@ -216,7 +216,7 @@ public class AutowiredTest {
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.AutowiredTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.AutowiredTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)

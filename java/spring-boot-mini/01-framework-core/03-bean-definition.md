@@ -155,7 +155,7 @@ public class BeanDefinitionTest {
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn -q clean compile exec:java -Dexec.mainClass="com.miniboot.demo.BeanDefinitionTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.BeanDefinitionTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)

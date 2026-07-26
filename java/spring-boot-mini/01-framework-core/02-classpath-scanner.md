@@ -182,7 +182,7 @@ public class ScannerTest {
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ScannerTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.ScannerTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)

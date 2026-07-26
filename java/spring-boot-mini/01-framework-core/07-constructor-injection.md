@@ -230,7 +230,7 @@ public class ConstructorInjectionTest {
 
 ```bash
 # In project root directory (where pom.xml is)
-mvn compile exec:java -Dexec.mainClass="com.miniboot.demo.ConstructorInjectionTest"
+mvn -q compile exec:java -Dexec.mainClass="com.miniboot.demo.ConstructorInjectionTest"
 ```
 
 ### Option 2: Use IDE (IntelliJ IDEA)
